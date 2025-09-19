@@ -1,5 +1,9 @@
 # 2025 Target Cyber Defense Challenge: When All Exits Are Blocked, Go Underground
 
+<div align="center">
+  <img src="./images/1755796480098.jpg" alt="Tunnel Vision CTF Challenge" width="80%">
+</div>
+
 ## O5: Tunnel Vision
 *Reverse engineering a DNS exfiltration binary when every other escape route has been cut off*
 
