@@ -5,7 +5,8 @@
 </div>
 
 <div align="center">
-  <h2><strong>Women in Cybersecurity (WiCyS) x Target Corporation | 2nd Place Overall</strong></h2>
+  <h1><em>Women in Cybersecurity (WiCyS) x Target Corporation</em></h1>
+  <h2><strong>🏆 2nd Place Overall 🏆</strong></h2>
 </div>
 
 ## O5: Tunnel Vision
