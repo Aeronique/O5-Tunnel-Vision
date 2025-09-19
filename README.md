@@ -5,7 +5,7 @@
 </div>
 
 <div align="center">
-  <h1><em>Women in Cybersecurity (WiCyS) x Target Corporation</em></h1>
+  <h1><em>Target Corporation x Women in Cybersecurity (WiCyS)</em></h1>
   <h2><strong>🏆 2nd Place Overall 🏆</strong></h2>
 </div>
 
