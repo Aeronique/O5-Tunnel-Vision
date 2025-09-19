@@ -1,12 +1,9 @@
-# O5-Tunnel-Vision
-2025 Target Cyber Defense Challenge - O5: Tunnel Vision Walkthrough
-
 # 2025 Target Cyber Defense Challenge: When All Exits Are Blocked, Go Underground
 
 ## O5: Tunnel Vision
 *Reverse engineering a DNS exfiltration binary when every other escape route has been cut off*
 
-**Women in Cybersecurity (WiCyS) - Tier 2 | 2nd Place Overall**
+**Women in Cybersecurity (WiCyS) x Target Corporation | 2nd Place Overall**
 
 ---
 
@@ -38,9 +35,8 @@ A friend throws us a lifeline: an old service binary from a previous DNS exfiltr
 - **Upload file**: Provided binary file that must be transmitted
 - **Server binary**: ARM64 Go executable with no source or documentation
 
-The server binary was ARM64 Go 1.25 (released just a week before the competition), making local debugging impossible for most competitors. Everything had to be done through static analysis in Ghidra - no dynamic analysis, no local testing, just assembly analysis and testing guesses against the live server.
-
-The organizers eventually released an x86_64 version to help other competitors, but this solution was developed entirely through static analysis of the ARM64 binary. When all your usual exits are blocked, DNS becomes the path underground.
+The server binary was ARM64 Go 1.25 (released just a week before the competition), making local debugging seemingly impossible for most competitors, unless they had a compatible Mac. Since I own 0 Apple products, everything had to be done through static analysis in Ghidra - no dynamic analysis, no local testing, just assembly analysis and testing guesses against the live server.
+The organizers eventually released an x86_64 version to help other competitors run the binary on a local server, but this solution was developed entirely through static analysis of the ARM64 binary. When all your usual exits are blocked, DNS becomes the path underground.
 
 **Key Challenge Components:**
 - Go binary server (ARM64 architecture)
@@ -56,7 +52,7 @@ The organizers eventually released an x86_64 version to help other competitors, 
 The first breakthrough came from analyzing the strings in the binary. Using Ghidra's string search turned up several important clues:
 
 ```go
-// From strings-exfil.txt analysis
+// From exfil analysis
 "exfil/dns.go"
 "processChunk0"
 "processChunkN" 
@@ -77,7 +73,7 @@ These strings immediately told us we were dealing with:
 Located at address `10021f840`, this function handles the initial chunk (chunk 0) of the upload process. Key observations from the Ghidra decompilation:
 
 ```c
-// From main.processChunk0.txt
+// From main.processChunk0
 void main.(*DNSHandler).processChunk0(main.DNSHandler *this, ...)
 {
     // ... stack setup ...
@@ -97,7 +93,7 @@ The function clearly shows a decrypt-process-respond pattern.
 
 #### 2. `main.(*DNSHandler).processChunkN` 
 
-Located at address `10021fbb0`, this handles subsequent chunks (N > 0). From the analysis in `main.processChunkN.txt`:
+Located at address `10021fbb0`, this handles subsequent chunks (N > 0). From the analysis in `main.processChunkN`:
 
 ```c
 void main.(*DNSHandler).processChunkN(main.DNSHandler *this, ...)
@@ -116,14 +112,14 @@ void main.(*DNSHandler).processChunkN(main.DNSHandler *this, ...)
 
 This revealed the protocol's completion mechanism - the server sends a "finished" response when all chunks are received.
 
-### Cryptographic Implementation Discovery
+### Cryptographic Implementation Findings
 
 #### NaCl Secretbox Usage
 
 The binary analysis showed extensive use of NaCl cryptographic functions:
 
 ```c
-// From secretbox.Open.txt and secretbox.Seal.txt
+// From secretbox.Open and secretbox.Seal
 bl golang.org/x/crypto/nacl/secretbox.Seal
 bl golang.org/x/crypto/nacl/secretbox.Open
 ```
@@ -138,7 +134,7 @@ This told us the system uses:
 From the strings analysis, we found the system uses Base32 hex encoding (not standard Base32):
 
 ```go
-// Evidence from strings-exfil.txt
+// Evidence from exfil
 "encoding/base32"
 "isValidBase32"
 ```
@@ -152,7 +148,7 @@ This encoding ensures DNS-safe transmission in domain names.
 The `frameAsAAAARecords` function revealed how data is embedded in DNS responses:
 
 ```c
-// From frameasaaaarecords.txt
+// From frameasaaaarecords
 void main.(*DNSHandler).frameAsAAAARecords(...)
 {
     // Creates AAAA (IPv6) records to carry encrypted payload
@@ -220,7 +216,7 @@ def build_query(domain: str) -> bytes:
     return header + qname + qtype_qclass
 ```
 
-**Explanation**: DNS has a specific binary format that must be followed exactly. The header contains counters for different record types, flags indicating this is a standard query, and a transaction ID. We're specifically asking for AAAA records (IPv6 addresses, type 28) which the server uses to send back our encrypted data. The `qname_wire()` function converts "example.com" into the DNS wire format with length prefixes.
+**Explanation**: DNS has a specific binary format that must be followed exactly. The header contains counters for different record types, flags indicating this is a standard query, and a transaction ID. We're specifically asking for AAAA records (IPv6 addresses, type 28) which the server uses to send back our encrypted data. The `qname_wire()` function converts "xfl.tn" into the DNS wire format with length prefixes.
 
 **Server Response Analysis:**
 
@@ -516,7 +512,7 @@ def create_dns_labels(data_b32: str) -> list:
     return labels
 ```
 
-**What's happening here**: DNS has strict limits on label lengths (63 characters max), and the server expects exactly 4 labels per query. We discovered from reverse engineering that the server uses 56 characters as the practical limit to avoid edge cases. When our Base32-encoded data doesn't fill all 4 labels, we pad with 'z' characters - the server specifically looks for 'z' as a padding marker and stops processing when it sees them. This function ensures our data is always formatted exactly as the server expects.
+**Explanation**: DNS has strict limits on label lengths (63 characters max), and the server expects exactly 4 labels per query. We discovered from reverse engineering that the server uses 56 characters as the practical limit to avoid edge cases. When our Base32-encoded data doesn't fill all 4 labels, we pad with 'z' characters - the server specifically looks for 'z' as a padding marker and stops processing when it sees them. This function ensures our data is always formatted exactly as the server expects.
 
 ### Phase 4: FINISHED Response - Flag Recovery
 
@@ -627,7 +623,7 @@ def build_query(domain: str) -> bytes:
 
 ### Nonce Construction
 
-A big discovery was the nonce format:
+A biggest find was the nonce format (this took an entire week):
 
 ```python
 def make_nonce(op7: bytes, seqid: int) -> bytes:
@@ -647,7 +643,7 @@ From analyzing `handleUploadRequest`, nonces are built as follows:
 | 7-19 | Zero pad | 13 null bytes |
 | 20-23 | Sequence ID | 4-byte big-endian chunk sequence number |
 
-**Critical Bug**: The server's nonce construction is broken - the sequence ID gets byte-swapped but stored at the wrong memory location, never making it into the actual nonce buffer. This means server nonces are `[session_id][17_zeros]` instead of the expected format.
+**Critical Server Bug**: The server's nonce construction is broken - the sequence ID gets byte-swapped but stored at the wrong memory location, never making it into the actual nonce buffer. This means server nonces are `[session_id][17_zeros]` instead of the expected format.
 
 ### Chunk Upload Process
 
@@ -709,5 +705,6 @@ For beginners tackling similar challenges:
 - Don't ignore the small details - encoding choices matter
 - Build incrementally - get the handshake working before tackling file transfer
 - Test against the actual target frequently
+- Use AI to help guide your searches or to help refine your scripts when you hit a wall
 
 The complete working client script shows that with patience and careful analysis, even complex protocols can be reverse engineered and rebuilt.
