@@ -43,7 +43,7 @@ A friend throws us a lifeline: an old service binary from a previous DNS exfiltr
 - **Server binary**: ARM64 Go executable with no source or documentation
 
 The server binary was ARM64 Go 1.25 (released just a week before the competition), making local debugging seemingly impossible for most competitors, unless they had a compatible Mac. Since I own 0 Apple products, everything had to be done through static analysis in Ghidra - no dynamic analysis, no local testing, just assembly analysis and testing guesses against the live server.
-The organizers eventually released an x86_64 version to help other competitors run the binary on a local server, but this solution was developed entirely through static analysis of the ARM64 binary. When all your usual exits are blocked, DNS becomes the path underground.
+The organizers eventually released an x86_64 version to help other competitors run the binary on a local server, but this solution was developed entirely through static analysis of the ARM64 binary.
 
 **Key Challenge Components:**
 - Go binary server (ARM64 architecture)
