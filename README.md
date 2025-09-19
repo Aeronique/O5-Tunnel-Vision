@@ -4,10 +4,12 @@
   <img src="./images/1755796480098.jpg" alt="Tunnel Vision CTF Challenge" width="80%">
 </div>
 
+<div align="center">
+  <h2><strong>Women in Cybersecurity (WiCyS) x Target Corporation | 2nd Place Overall</strong></h2>
+</div>
+
 ## O5: Tunnel Vision
 *Reverse engineering a DNS exfiltration binary when every other escape route has been cut off*
-
-**Women in Cybersecurity (WiCyS) x Target Corporation | 2nd Place Overall**
 
 ---
 
