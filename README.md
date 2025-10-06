@@ -45,7 +45,7 @@ A friend throws us a lifeline: an old service binary from a previous DNS exfiltr
 The server binary was ARM64 Go 1.25 (released just a week before the competition), making local debugging seemingly impossible for most competitors, unless they had a compatible Mac. Since I own 0 Apple products, everything had to be done through static analysis in Ghidra - no dynamic analysis, no local testing, just assembly analysis and testing guesses against the live server.
 The organizers eventually released an x86_64 version to help other competitors run the binary on a local server, but this solution was developed entirely through static analysis of the ARM64 binary.
 
-**Key Challenge Components:**
+**Main Challenge Components:**
 - Go binary server (ARM64 architecture)
 - DNS-over-HTTPS covert channel using AAAA records
 - NaCl (Network and Cryptography library) encryption
@@ -77,7 +77,7 @@ These strings immediately told us we were dealing with:
 
 #### 1. `main.(*DNSHandler).processChunk0`
 
-Located at address `10021f840`, this function handles the initial chunk (chunk 0) of the upload process. Key observations from the Ghidra decompilation:
+Located at address `10021f840`, this function handles the initial chunk (chunk 0) of the upload process. Important observations from the Ghidra decompilation:
 
 ```c
 // From main.processChunk0
@@ -163,7 +163,7 @@ void main.(*DNSHandler).frameAsAAAARecords(...)
 }
 ```
 
-**What Matters**: Data is split across multiple AAAA records, with the first byte of each IPv6 address serving as a record index.
+**Explanation**: Data is split across multiple AAAA records, with the first byte of each IPv6 address serving as a record index.
 
 #### Handshake Protocol
 
@@ -174,7 +174,7 @@ Through reverse engineering, we discovered the protocol flow:
 3. **CHUNK Upload**: Client uploads file chunks sequentially
 4. **FINISHED Response**: Server indicates completion and returns the flag
 
-## Breaking Down the Protocol
+## Deconstructing the Protocol
 
 Understanding how each phase of the protocol worked required careful analysis of data formats, DNS message construction, and cryptographic operations. Here's the complete technical breakdown:
 
