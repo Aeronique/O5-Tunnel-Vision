@@ -706,7 +706,7 @@ This challenge demonstrated the importance of systematic reverse engineering, co
 
 This challenge was a good example of real-world reverse engineering work - analyzing a complex binary, understanding its network protocols, and building a compatible client. The use of real cryptographic libraries (NaCl) and standard protocols (DNS-over-HTTPS) made it both realistic and challenging.
 
-For beginners tackling similar challenges:
+For others tackling similar challenges:
 - Start with string analysis to get the big picture
 - Use Ghidra's cross-references to trace data flow
 - Don't ignore the small details - encoding choices matter
